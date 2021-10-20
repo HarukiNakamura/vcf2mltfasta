@@ -26,7 +26,7 @@ def read_file(filepath: str) -> Generator[str, None, None]:
     """
     with open(filepath, encoding='utf-8', mode="r") as f:
         for line in f:
-            yield line.rstrip('\n|\r|\r\n')
+            yield line.rstrip("\n|\r|\r\n")
 
 
 def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path: str=None) -> str:
@@ -155,17 +155,42 @@ def vcf2fasta(seq: str, index: int, ref: str, alt: str) -> str:
 
     Returns
     -------
-    new_seq: str
+    out_seq: str
         Modified sequence.
     """
     # 一旦リストに変換する。
     # 配列は常にリストで扱ったほうが速い？
-    new_seq: list[str] = list(str)
+    out_seq: list[str] = list(seq)
     # SNP or insertion
     if len(ref) <= len(alt):
-        new_seq[index] = alt
+        out_seq[index] = alt
     # deletion
     else:
-        seq[index:index+len(ref)] = alt
-    new_seq: str = "".join(seq)
-    return new_seq
+        out_seq[index:index+len(ref)] = alt
+    out_seq: str = "".join(out_seq)
+    return out_seq
+
+
+def format_fasta(sample_name: str, seq: str) -> str:
+    """
+    Change strings to fasta format.
+
+    Parameters
+    ----------
+    sample_name: str
+        Sample name.
+    seq : str
+        Sequence you want to format as
+
+    Returns
+    -------
+    out_seq: str
+        Formatted sequence.
+    """
+    num: int = int(len(seq) / 60)
+    # 一旦リストに変換する。
+    out_seq: list[str] = list(seq)
+    for i in range(num):
+        out_seq[i * 60 + 59] = seq[i * 60 + 59] + "\n"
+    out_seq: str = ">" + sample_name + "\n" + "".join(out_seq) + "\n"
+    return out_seq
