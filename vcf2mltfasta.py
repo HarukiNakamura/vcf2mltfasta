@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 #! coding: utf-8
+"""
+This script 
+"""
 
-from src.my_utils import fasta_seq, parse_vcf, read_file, vcf2fasta, format_fasta
+
+from src.my_utils import fasta_seq, parse_vcf, read_file, vcf2fasta, format_fasta, read_gff3
 
 fasta: str = "testData/input.fasta"
 gff: str = "testData/input.gff3"
 vcf: str = "testData/input.vcf"
+gene: str = "Sobic.001G00100"
 
 outfasta: str = "testData/out.fasta"
 
-####################################
-# 遺伝子情報をgffから取得するコード #
-####################################
-chr: str = "Chr01"
-start: int = 1
-end: int = 70
+chr, start, end = read_gff3(gff, gene)
 
 seq: str = fasta_seq(fasta, chr, start, end)
 #print(seq)

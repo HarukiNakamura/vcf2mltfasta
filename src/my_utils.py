@@ -37,7 +37,7 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path:
     Parameters
     ----------
     fasta_path : str
-        Fasta file path.
+        Path to fasta file.
     chr : str
         Target chromosome name.
     start : int
@@ -194,3 +194,32 @@ def format_fasta(sample_name: str, seq: str) -> str:
         out_seq[i * 60 + 59] = seq[i * 60 + 59] + "\n"
     out_seq: str = ">" + sample_name + "\n" + "".join(out_seq) + "\n"
     return out_seq
+
+
+def read_gff3(gff3_path: str, gene: str) -> tuple:
+    """
+    Read gff3 and return info. 
+    Parameters
+    ----------
+    gff3_path : str
+        Path to gff3 file.
+    gene : str
+        Target gene name.
+
+    Returns
+    -------
+    chr, start, end: tuple[str, int, int]
+        Chromosome name, start and end position.
+    """
+    for gff_line in read_file(gff3_path):
+        if re.search(gene, gff_line):
+            gff_line: str = gff_line.rstrip("\n|\r|\r\n")
+            splited_line: list[str] = gff_line.split("\t")
+            chr: str = splited_line[0]
+            #type: str = splited_line[2]
+            start: int = int(splited_line[3])
+            end: int = int(splited_line[4])
+            #strand: str = splited_line[6]
+            #info: str = splited_line[8]
+            break
+    return chr, start, end
