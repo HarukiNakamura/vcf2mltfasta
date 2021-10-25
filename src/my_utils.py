@@ -4,6 +4,7 @@
 関数集
 '''
 
+import gzip
 import re
 
 from typing import Generator, List
@@ -24,9 +25,14 @@ def read_file(filepath: str) -> Generator[str, None, None]:
     Generator[str, None, None]
         Text content.
     """
-    with open(filepath, encoding='utf-8', mode="r") as f:
-        for line in f:
-            yield line.rstrip("\n|\r|\r\n")
+    if filepath.endswith(".gz"):
+        with gzip.open(filepath, mode="rb") as f:
+            for line in f:
+                yield line.decode()
+    else:
+        with open(filepath, mode="r") as f:
+            for line in f:
+                yield line
 
 
 def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path: str=None) -> str:
