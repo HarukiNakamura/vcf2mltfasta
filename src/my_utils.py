@@ -35,7 +35,7 @@ def read_file(filepath: str) -> Generator[str, None, None]:
                 yield line
 
 
-def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path: str=None) -> str:
+def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_bit: int=None) -> str:
     """
     Read fasta file and return target seqence.
     This function similar to "samtools faidx <fasta_path> <chr>-<start>:<end>"
@@ -50,8 +50,8 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path:
         Start position of the target sequence.
     end : int
         End position of the target sequence
-    fasta_index_path : str, optional
-        Fasta index file path, by default None.
+    fa_bit : int, optional
+        Byte index of FASTA file.
 
     Returns
     -------
@@ -62,17 +62,14 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path:
     seq: str = ""
     # fastaのインデックスがない場合、とりあえずターゲットの染色体まで読みすすめる。
     with open(fasta_path, mode="r") as fasta:
-    #インデックスファイルがない場合該当する染色体番号に至るまで読み飛ばす。
-        if fasta_index_path is None:
+    #バイトインデックスが指定されている場合該当する染色体番号に至るまで読み飛ばす。
+        if fa_bit is None:
             for fa_line in fasta:
                 if fa_line.startswith(">" + chr):
                     break
-        #インデックスファイルがある場合、seekで読み飛ばす。
+        #バイトインデックスが指定されている場合、seekで読み飛ばす。
         else:
-            for fai_line in read_file(fasta_index_path):
-                if fai_line.startswith(chr):
-                    bit = fai_line.split("\t")[2]
-                    fasta.seek(int(bit))
+            fasta.seek(fa_bit)
         #読み飛ばしたところから始める。
         for fa_line in fasta:
             fa_line = fa_line.rstrip("\n|\r|\r\n")

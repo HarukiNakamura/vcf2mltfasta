@@ -6,7 +6,7 @@ The output index is in the following format.
 The first and second line contains FASTA and VCF file name (Full path).
 From the third line,
 The first column contains chromosome (contig) name.
-The second and third columns contain the bit indices of FASTA and VCF.
+The second and third columns contain the byte index of FASTA and VCF.
 Each column is tab-delimited.
 """
 
@@ -72,7 +72,7 @@ def main():
 
 
     # FASTAが全ゲノムで、VCFが一部の染色体だけ、ということもあると思うあるので
-    # FASTAとVCFで共通して情報のある染色体のみ、そのビットインデックスを出力する。
+    # FASTAとVCFで共通して情報のある染色体のみ、そのバイトインデックスを出力する。
     # set型を用いた方が速いが、順番が保持されないのでNG。
     with open(out_index, mode="w") as out:
         out.write(str(pathlib.Path(fasta_path).resolve()) + "\n")
