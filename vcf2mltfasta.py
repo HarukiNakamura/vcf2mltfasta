@@ -64,19 +64,21 @@ def main():
             for index_line in index:
                 if index_line.startswith(chr):
                     index_line = index_line.rstrip("\n|\r|\r\n")
-                    _, fa_bit, vcf_bit = index_line.split("\t")
-                    fa_bit = int(fa_bit) + 1
-                    vcf_bit = int(vcf_bit) + 1
+                    _, fa_byte, vcf_byte = index_line.split("\t")
+                    fa_byte = int(fa_byte)
+                    vcf_byte = int(vcf_byte)
                 break
             else:
                 print(f"No index information for {chr}.")
                 sys.exit()
-
-    seq: str = fasta_seq(fasta_path=fasta_path, chr=chr, start=start, end=end, fa_bit=fa_bit)
+    else:
+        fa_byte = None
+        vcf_byte = None
+    seq: str = fasta_seq(fasta_path=fasta_path, chr=chr, start=start, end=end, fa_byte=fa_byte)
     #print(seq)
 
     vcfs = []
-    for vcf_line in read_file(filepath=vcf_path):
+    for vcf_line in read_file(filepath=vcf_path, byte=vcf_byte):
         if vcf_line.startswith("#CHROM"):
             vcf_line = vcf_line.rstrip("\n|\r|\r\n")
             sample_names: list = vcf_line.split("\t")[9:]

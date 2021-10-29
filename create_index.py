@@ -44,31 +44,31 @@ def main():
 
 
     ################################ Main ################################
-    fa_bit: int = 0
-    fa_bit_dic: dict = {}
+    fa_byte: int = 0
+    fa_byte_dic: dict = {}
     print("Reading input FASTA...")
     for line in read_file(fasta_path):
-        fa_bit += len(line)
+        fa_byte += len(line)
         if line.startswith(">"):
             chr = line.lstrip(">").rstrip("\n|\r|\r\n")
-            fa_bit_dic[chr] = str(fa_bit)
-    print(f"Found {len(fa_bit_dic)} chromosomes (contigs) in FASTA.")
+            fa_byte_dic[chr] = str(fa_byte)
+    print(f"Found {len(fa_byte_dic)} chromosomes (contigs) in FASTA.")
 
 
-    vcf_bit: int = 0
-    vcf_bit_dic: dict = {}
+    vcf_byte: int = 0
+    vcf_byte_dic: dict = {}
     tmp_chr: str = ""
     print("Reading input VCF...")
     for line in read_file(vcf_path):
         if line.startswith("#"):
-            vcf_bit += len(line)
+            vcf_byte += len(line)
         else:
             chr: str = line.split("\t")[0]
             if tmp_chr != chr:
-                vcf_bit_dic[chr] = str(vcf_bit)
+                vcf_byte_dic[chr] = str(vcf_byte)
                 tmp_chr = chr
-            vcf_bit += len(line)
-    print(f"Found {len(vcf_bit_dic)} chromosomes (contigs) in VCF.")
+            vcf_byte += len(line)
+    print(f"Found {len(vcf_byte_dic)} chromosomes (contigs) in VCF.")
 
 
     # FASTAが全ゲノムで、VCFが一部の染色体だけ、ということもあると思うあるので
@@ -77,9 +77,9 @@ def main():
     with open(out_index, mode="w") as out:
         out.write(str(pathlib.Path(fasta_path).resolve()) + "\n")
         out.write(str(pathlib.Path(vcf_path).resolve()) + "\n")
-        for chr in fa_bit_dic.keys():
-            if chr in vcf_bit_dic.keys():
-                out.write("\t".join([chr, fa_bit_dic[chr], vcf_bit_dic[chr]])+"\n")
+        for chr in fa_byte_dic.keys():
+            if chr in vcf_byte_dic.keys():
+                out.write("\t".join([chr, fa_byte_dic[chr], vcf_byte_dic[chr]])+"\n")
     ############################# End of Main #############################
 
 

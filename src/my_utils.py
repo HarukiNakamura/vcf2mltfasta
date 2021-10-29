@@ -7,11 +7,11 @@
 import gzip
 import re
 
-from typing import Generator, List
+from typing import Generator
 
 
 
-def read_file(filepath: str) -> Generator[str, None, None]:
+def read_file(filepath: str, byte: int=None) -> Generator[str, None, None]:
     """
     Return a text content one line at a time.
 
@@ -19,6 +19,8 @@ def read_file(filepath: str) -> Generator[str, None, None]:
     ----------
     filepath : str
         File path you want to read.
+    byte: int, optional
+        Byte index to skip file.
 
     Yields
     -------
@@ -27,15 +29,19 @@ def read_file(filepath: str) -> Generator[str, None, None]:
     """
     if filepath.endswith(".gz"):
         with gzip.open(filepath, mode="rb") as f:
+            if byte is not None:
+                f.seek(byte)
             for line in f:
                 yield line.decode()
     else:
         with open(filepath, mode="r") as f:
+            if byte is not None:
+                f.seek(byte)
             for line in f:
                 yield line
 
 
-def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_bit: int=None) -> str:
+def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_byte: int=None) -> str:
     """
     Read fasta file and return target seqence.
     This function similar to "samtools faidx <fasta_path> <chr>-<start>:<end>"
@@ -50,7 +56,7 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_bit: int=None)
         Start position of the target sequence.
     end : int
         End position of the target sequence
-    fa_bit : int, optional
+    fa_byte : int, optional
         Byte index of FASTA file.
 
     Returns
@@ -63,13 +69,13 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_bit: int=None)
     # fastaのインデックスがない場合、とりあえずターゲットの染色体まで読みすすめる。
     with open(fasta_path, mode="r") as fasta:
     #バイトインデックスが指定されている場合該当する染色体番号に至るまで読み飛ばす。
-        if fa_bit is None:
+        if fa_byte is None:
             for fa_line in fasta:
                 if fa_line.startswith(">" + chr):
                     break
         #バイトインデックスが指定されている場合、seekで読み飛ばす。
         else:
-            fasta.seek(fa_bit)
+            fasta.seek(fa_byte)
         #読み飛ばしたところから始める。
         for fa_line in fasta:
             fa_line = fa_line.rstrip("\n|\r|\r\n")
