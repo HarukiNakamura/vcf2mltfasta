@@ -78,6 +78,14 @@ def main():
     #print(seq)
 
     vcfs = []
+
+    # byte indexを指定してVCFを読み始めると、サンプル名をゲットできなくなる。
+    # 苦し紛れだが、応急処置。
+    if vcf_byte is not None:
+        for vcf_line in read_file(filepath=vcf_path, byte=None):
+            if vcf_line.startswith("#CHROM"):
+                vcf_line = vcf_line.rstrip("\n|\r|\r\n")
+                sample_names: list = vcf_line.split("\t")[9:]
     for vcf_line in read_file(filepath=vcf_path, byte=vcf_byte):
         if vcf_line.startswith("#CHROM"):
             vcf_line = vcf_line.rstrip("\n|\r|\r\n")
