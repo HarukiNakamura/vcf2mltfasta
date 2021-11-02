@@ -5,11 +5,27 @@
 '''
 
 import gzip
+import os
 import re
+import sys
 
 from typing import Generator
 
 
+def all_file_exists(*args) -> bool:
+    """
+    Check for the presence of all files.
+
+    Returns
+    -------
+    bool
+        If all file exists, return True.
+    """
+    for file in args:
+        if not os.path.isfile(file):
+            sys.stderr.write(f"Filename {file} does not exist.\n")
+            return sys.exit(1)
+    return True
 
 def read_file(filepath: str, byte: int=None) -> Generator[str, None, None]:
     """
@@ -85,7 +101,7 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_byte: int=None
             elif c > end:
                 break
             else:
-                seq += fa_line[max(start - 1 - c, 0):min(end -c , len(fa_line))]
+                seq += fa_line[max(start - 1 - c, 0):min(end - c , len(fa_line))]
             c += len(fa_line)
     return seq
 
@@ -201,7 +217,11 @@ def format_fasta(sample_name: str, seq: str) -> str:
     out_seq: list[str] = list(seq)
     for i in range(num):
         out_seq[i * 60 + 59] = seq[i * 60 + 59] + "\n"
-    out_seq: str = ">" + sample_name + "\n" + "".join(out_seq) + "\n"
+    out_seq: str = ">" + sample_name + "\n" + "".join(out_seq)
+
+    # 配列長が60の倍数の場合、"\n"が末尾についた状態になるので、その際は末尾に"\n"をつけない。
+    if not out_seq.endswith("\n"):
+        out_seq:str = out_seq + "\n"
     return out_seq
 
 

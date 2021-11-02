@@ -5,12 +5,23 @@ This script
 """
 
 import argparse
+from logging import getLogger, StreamHandler, INFO, Formatter
 import sys
 
 from src.my_utils import fasta_seq, parse_vcf, read_file, vcf2fasta, format_fasta, read_gff3
 
 
 def main():
+    ################ Setting of logger ################
+    logger = getLogger(__name__)
+    logger.setLevel(INFO)
+    sh = StreamHandler()
+    sh.setLevel(INFO)
+    sh.setFormatter(Formatter("[%(asctime)s] %(levelname)s: %(message)s"))
+    logger.addHandler(sh)
+    ################ End of setting of logger ################
+
+
     ################ Setting command line arguments ################
     parser=argparse.ArgumentParser(
         description=__doc__,
@@ -35,6 +46,10 @@ def main():
     parser.add_argument(
         "-t", "--target-gene-name", type=str, action="store",
         dest="geneName", required=True, help="Target gene name.")
+    
+    parser.add_argument(
+        "-k", "--keep-reference-seq", action="store_true",
+        dest="keepRef", required=False, help="Output reference sequence.")
 
     parser.add_argument(
         "-p", "--output-fasta-prefix", type=str, action="store", default="out",
@@ -46,10 +61,10 @@ def main():
     index_path: str = args.indexPath
     gff3_path: str = args.gff3FilePath
     gene_name: str = args.geneName
+    keep_ref: bool = args.keepRef
     output_prefix: str = args.outputPrefix
-
     if (fasta_path is None) and (vcf_path is None) and (index_path is None):
-        print("You need to input index file or FASTA and VCF.")
+        logger.error("You need to input index file or FASTA and VCF.")
         sys.exit()
 
     ############################## Main ##############################
@@ -60,33 +75,30 @@ def main():
     if index_path is not None:
         with open(index_path, mode="r") as index:
             fasta_path: str = next(index).rstrip("\n|\r|\r\n")
-            vcf_path: str = next(index).rstrip("\n|\r|\r\n")
+            vcf_info: list = next(index).rstrip("\n|\r|\r\n").split("\t")
+            vcf_path: str = vcf_info[0]
+            vcf_header_byte: int = int(vcf_info[1].split("=")[1])
             for index_line in index:
                 if index_line.startswith(chr):
                     index_line = index_line.rstrip("\n|\r|\r\n")
-                    _, fa_byte, vcf_byte = index_line.split("\t")
+                    _, fa_byte, vcf_chrom_byte = index_line.split("\t")
                     fa_byte = int(fa_byte)
-                    vcf_byte = int(vcf_byte)
+                    vcf_chrom_byte = int(vcf_chrom_byte)
                 break
             else:
-                print(f"No index information for {chr}.")
+                logger.error(f"No index information for {chr}.")
                 sys.exit()
     else:
         fa_byte = None
-        vcf_byte = None
+        vcf_chrom_byte = None
+    
     seq: str = fasta_seq(fasta_path=fasta_path, chr=chr, start=start, end=end, fa_byte=fa_byte)
     #print(seq)
 
     vcfs = []
-
-    # byte indexを指定してVCFを読み始めると、サンプル名をゲットできなくなる。
-    # 苦し紛れだが、応急処置。
-    if vcf_byte is not None:
-        for vcf_line in read_file(filepath=vcf_path, byte=None):
-            if vcf_line.startswith("#CHROM"):
-                vcf_line = vcf_line.rstrip("\n|\r|\r\n")
-                sample_names: list = vcf_line.split("\t")[9:]
-    for vcf_line in read_file(filepath=vcf_path, byte=vcf_byte):
+    if vcf_chrom_byte is not None:
+        sample_names: list = next(read_file(filepath=vcf_path, byte=vcf_header_byte)).rstrip("\n|\r|\r\n").split("\t")[9:]
+    for vcf_line in read_file(filepath=vcf_path, byte=vcf_chrom_byte):
         if vcf_line.startswith("#CHROM"):
             vcf_line = vcf_line.rstrip("\n|\r|\r\n")
             sample_names: list = vcf_line.split("\t")[9:]
@@ -98,6 +110,9 @@ def main():
     #print(vcfs)
 
     with open(outfasta, mode="w") as out:
+        if keep_ref:
+            ref_name = fasta_path + " " + chr + ":" + str(start) + "-" + str(end)
+            out.write(format_fasta(ref_name, seq))
         for i in range(len(sample_names)):
             new_seq: str = seq
             for info in vcfs[::-1]:
