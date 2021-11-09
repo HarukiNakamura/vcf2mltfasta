@@ -4,13 +4,30 @@
 関数集
 '''
 
+import gzip
+import os
 import re
+import sys
 
-from typing import Generator, List
+from typing import Generator
 
 
+def all_file_exists(*args) -> bool:
+    """
+    Check for the presence of all files.
 
-def read_file(filepath: str) -> Generator[str, None, None]:
+    Returns
+    -------
+    bool
+        If all file exists, return True.
+    """
+    for file in args:
+        if not os.path.isfile(file):
+            sys.stderr.write(f"Filename {file} does not exist.\n")
+            return sys.exit(1)
+    return True
+
+def read_file(filepath: str, byte: int=None) -> Generator[str, None, None]:
     """
     Return a text content one line at a time.
 
@@ -18,18 +35,29 @@ def read_file(filepath: str) -> Generator[str, None, None]:
     ----------
     filepath : str
         File path you want to read.
+    byte: int, optional
+        Byte index to skip file.
 
     Yields
     -------
     Generator[str, None, None]
         Text content.
     """
-    with open(filepath, encoding='utf-8', mode="r") as f:
-        for line in f:
-            yield line.rstrip("\n|\r|\r\n")
+    if filepath.endswith(".gz"):
+        with gzip.open(filepath, mode="rb") as f:
+            if byte is not None:
+                f.seek(byte)
+            for line in f:
+                yield line.decode()
+    else:
+        with open(filepath, mode="r") as f:
+            if byte is not None:
+                f.seek(byte)
+            for line in f:
+                yield line
 
 
-def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path: str=None) -> str:
+def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fa_byte: int=None) -> str:
     """
     Read fasta file and return target seqence.
     This function similar to "samtools faidx <fasta_path> <chr>-<start>:<end>"
@@ -44,8 +72,8 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path:
         Start position of the target sequence.
     end : int
         End position of the target sequence
-    fasta_index_path : str, optional
-        Fasta index file path, by default None.
+    fa_byte : int, optional
+        Byte index of FASTA file.
 
     Returns
     -------
@@ -56,17 +84,14 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path:
     seq: str = ""
     # fastaのインデックスがない場合、とりあえずターゲットの染色体まで読みすすめる。
     with open(fasta_path, mode="r") as fasta:
-    #インデックスファイルがない場合該当する染色体番号に至るまで読み飛ばす。
-        if fasta_index_path is None:
+    #バイトインデックスが指定されている場合該当する染色体番号に至るまで読み飛ばす。
+        if fa_byte is None:
             for fa_line in fasta:
                 if fa_line.startswith(">" + chr):
                     break
-        #インデックスファイルがある場合、seekで読み飛ばす。
+        #バイトインデックスが指定されている場合、seekで読み飛ばす。
         else:
-            for fai_line in read_file(fasta_index_path):
-                if fai_line.startswith(chr):
-                    bit = fai_line.split("\t")[2]
-                    fasta.seek(int(bit))
+            fasta.seek(fa_byte)
         #読み飛ばしたところから始める。
         for fa_line in fasta:
             fa_line = fa_line.rstrip("\n|\r|\r\n")
@@ -76,7 +101,7 @@ def fasta_seq(fasta_path: str, chr: str, start: int, end: int, fasta_index_path:
             elif c > end:
                 break
             else:
-                seq += fa_line[max(start - 1 - c, 0):min(end -c , len(fa_line))]
+                seq += fa_line[max(start - 1 - c, 0):min(end - c , len(fa_line))]
             c += len(fa_line)
     return seq
 
@@ -192,7 +217,11 @@ def format_fasta(sample_name: str, seq: str) -> str:
     out_seq: list[str] = list(seq)
     for i in range(num):
         out_seq[i * 60 + 59] = seq[i * 60 + 59] + "\n"
-    out_seq: str = ">" + sample_name + "\n" + "".join(out_seq) + "\n"
+    out_seq: str = ">" + sample_name + "\n" + "".join(out_seq)
+
+    # 配列長が60の倍数の場合、"\n"が末尾についた状態になるので、その際は末尾に"\n"をつけない。
+    if not out_seq.endswith("\n"):
+        out_seq:str = out_seq + "\n"
     return out_seq
 
 
