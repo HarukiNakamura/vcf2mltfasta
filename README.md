@@ -56,16 +56,17 @@ optional arguments:
 ```
 
 The output index is in the following format.  
-The first line contains FASTA file name (Full path).
-The second line contains VCF file name (Full path) and headers byte index.
-From the third line,  
-The first column contains chromosome (contig) name.  The second and third columns contain the byte indices of FASTA and VCF.  Each column is tab-delimited.
+The first line contains FASTA file name (Full path).  
+The second line contains VCF file name (Full path) and headers byte index.  
+From the third line...  
+The first column contains chromosome (contig) name.  
+The second and third columns contain the byte indices of FASTA and VCF.  Each column is tab-delimited.
 
 ```text
 /path/to/your/input/FASTA
 /path/to/your/input/VCF header=10
-Chr01   10  120
-Chr02   100 11000
+Chr01 10 120
+Chr02 100 11000
     .
     .
     .
